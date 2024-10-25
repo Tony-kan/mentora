@@ -1,0 +1,82 @@
+version: '3.8'
+
+
+# network connected all the containers
+networks:
+  mentoranetwork:
+    driver: bridge
+
+
+# persistent data 
+
+volumes:
+  app_data:
+  postgres_data:
+  pgadmin_data:
+
+services:
+
+# service for the restful api
+
+  app:
+    build: .
+    image: mentora_restful_api
+    container_name: mentora_restful_api
+
+    ports:
+      - "8400:8400"
+
+    depends_on:
+      - postgres
+
+    volumes:
+      # - ./mentora_backend:/:rw # local directorry for live code reloading
+      - app_data:/app_data     # persistent data storage  
+
+    environment:
+      - APP_ENV=dev
+
+    networks:
+      - mentoranetwork
+
+# service for postgres db
+  postgres:
+    image: postgres
+    container_name: mentora_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - mentoranetwork
+
+ # service for pgadmin to interact with posthres  using GUI
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: mentora_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5054:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    networks:
+      - mentoranetwork
+
+    depends_on:
+      - postgres
+
+
+
